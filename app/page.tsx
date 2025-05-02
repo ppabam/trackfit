@@ -1,103 +1,324 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import { addDays, format, parseISO, differenceInDays } from "date-fns";
+
+type UserEntry = {
+  date: string;
+  weight: number;
+};
+
+type MergedEntry = {
+  date: string;
+  weight: number | null;
+  dietTarget: number | null;
+};
+
+const Button = ({
+  children,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+  <button
+    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+// 목표선 설정
+const TARGET_CONFIG = {
+  dietStartDate: "2025-04-21",
+  dietEndDate: "2025-07-29",
+  dietStartWeight: 98,
+  dietEndWeight: 80,
+};
+
+const generateDietTargetData = (allDates: string[]): MergedEntry[] => {
+  const { dietStartDate, dietEndDate, dietStartWeight, dietEndWeight } =
+    TARGET_CONFIG;
+  const start = parseISO(dietStartDate);
+  const end = parseISO(dietEndDate);
+  const totalDays = differenceInDays(end, start);
+
+  return allDates.map((dateStr) => {
+    const currentDate = parseISO(dateStr);
+    if (currentDate < start || currentDate > end) {
+      return { date: dateStr, weight: null, dietTarget: null };
+    }
+
+    const daysPassed = differenceInDays(currentDate, start);
+    const weight =
+      dietStartWeight -
+      ((dietStartWeight - dietEndWeight) * daysPassed) / totalDays;
+    return {
+      date: dateStr,
+      weight: null,
+      dietTarget: parseFloat(weight.toFixed(1)),
+    };
+  });
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [glitch, setGlitch] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    if (glitch) {
+      document.body.classList.add("glitch-mode");
+    } else {
+      document.body.classList.remove("glitch-mode");
+    }
+  }, [glitch]);
+  const today = new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState<string>(today);
+  const allDatesForTarget = useMemo(() => {
+    const startDate = parseISO(TARGET_CONFIG.dietStartDate);
+    const endDate = parseISO(TARGET_CONFIG.dietEndDate);
+    const dateArray: string[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      dateArray.push(format(currentDate, "yyyy-MM-dd"));
+      currentDate = addDays(currentDate, 1);
+    }
+    return dateArray;
+  }, []);
+
+  const getTargetWeightForDate = (selectedDate: string): number => {
+    const targetData = generateDietTargetData(allDatesForTarget);
+    const targetEntry = targetData.find((entry) => entry.date === selectedDate);
+    return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
+  };
+
+  const [weight, setWeight] = useState<number>(getTargetWeightForDate(date));
+  const [data, setData] = useState<UserEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const weightDifference = useMemo(() => {
+    const targetWeight = getTargetWeightForDate(date);
+    const diff = parseFloat((weight - targetWeight).toFixed(1));
+    if (diff > 0) {
+      return `(+ ${diff} kg)`;
+    } else if (diff < 0) {
+      return `(- ${Math.abs(diff)} kg)`;
+    } else {
+      return "(0 kg)";
+    }
+  }, [weight, date, getTargetWeightForDate]);
+
+  useEffect(() => {
+    // 모바일 환경에서 주소창 숨기기
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setTimeout(() => {
+        window.scrollTo(0, 1);
+      }, 100);
+    }
+  }, []);
+
+  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
+
+  useEffect(() => {
+    setUserModifiedWeight(false); // 날짜 변경 시 초기화
+  }, [date]);
+
+  // 날짜가 바뀌면 목표 체중으로 초기화 (단, 수동 조작 안 했을 때만)
+  useEffect(() => {
+    if (!userModifiedWeight) {
+      setWeight(getTargetWeightForDate(date));
+    }
+  }, [date, userModifiedWeight, getTargetWeightForDate]);
+
+  // 슬라이더 수동 조작 감지
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserModifiedWeight(true);
+    setWeight(parseFloat(e.target.value));
+  };
+
+  // 기록 후 상태 초기화
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date) {
+      setError("날짜를 입력해주세요.");
+      return;
+    }
+    if (weight < 75 || weight > 100) {
+      setError("체중은 75~100kg 사이여야 합니다.");
+      return;
+    }
+    setError(null);
+    setData((prev) => [...prev, { date, weight }]);
+    setUserModifiedWeight(false); // 제출 후 초기화
+  };
+
+  const allDates = useMemo(() => {
+    const startDate = parseISO(TARGET_CONFIG.dietStartDate);
+    const endDate = parseISO(TARGET_CONFIG.dietEndDate);
+    const dateArray: string[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      dateArray.push(format(currentDate, "yyyy-MM-dd"));
+      currentDate = addDays(currentDate, 1);
+    }
+    const userDates = data.map((d) => d.date);
+    return Array.from(new Set([...dateArray, ...userDates])).sort();
+  }, [data]);
+
+  const dietTargetData = useMemo(
+    () => generateDietTargetData(allDates),
+    [allDates]
+  );
+
+  const mergedData = useMemo(() => {
+    return allDates.map((date) => {
+      const userEntry = data.find((d) => d.date === date);
+      const targetEntry = dietTargetData.find((d) => d.date === date);
+      return {
+        date,
+        weight: userEntry?.weight ?? null,
+        dietTarget: targetEntry?.dietTarget ?? null,
+      };
+    });
+  }, [allDates, data, dietTargetData]);
+
+  return (
+    <div className="flex flex-col font-sans h-screen">
+      <main className="flex flex-col flex-grow p-6 sm:p-12 w-full mx-auto">
+        <h1 className="text-xl font-semibold text-center ">📉 체중 관리</h1>
+
+        {mergedData.length > 0 && (
+          <div className="flex-grow h-0 min-h-[300px]">
+            {" "}
+            {/* 변경된 부분 */}
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={mergedData}
+                margin={{ top: 20, right: 0, left: -25, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(date) => format(parseISO(date), "M-dd")}
+                  tick={{ fontSize: 9 }}
+                  angle={-45}
+                />
+                <YAxis
+                  unit="kg"
+                  domain={["auto", "auto"]}
+                  tick={{ fontSize: 9 }}
+                />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="dietTarget"
+                  stroke="#e45858"
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  dot={false}
+                  name="목표선"
+                  connectNulls={false} // 이 부분을 false로 유지
+                />
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot
+                  name="달성"
+                  connectNulls
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-6 mt-4 pb-4 h-auto"
+        >
+          {" "}
+          {/* 변경된 부분 */}
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">날짜</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+              }}
+              className="border border-gray-300 p-2 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-700">
+              몸무게:{" "}
+              <strong className="text-blue-600">
+                {weight.toFixed(1)} kg {weightDifference}
+              </strong>
+            </span>
+            <input
+              type="range"
+              min="75"
+              max="100"
+              step="0.1"
+              value={weight}
+              onChange={handleWeightChange}
+              className="w-full accent-blue-500"
+            />
+          </label>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <Button type="submit">기록하기</Button>
+        </form>
+
+        <style>{`
+          body.glitch-mode {
+            animation: glitch-bg 0.3s infinite alternate;
+            filter: contrast(150%) hue-rotate(45deg);
+          }
+
+          @keyframes glitch-bg {
+            0% {
+              transform: translate(0, 0) skew(0deg, 0deg);
+            }
+            20% {
+              transform: translate(-5px, 3px) skew(2deg, -2deg);
+            }
+            40% {
+              transform: translate(5px, -3px) skew(-2deg, 2deg);
+            }
+            60% {
+              transform: translate(-3px, 5px) skew(3deg, -3deg);
+            }
+            80% {
+              transform: translate(3px, -5px) skew(-3deg, 3deg);
+            }
+            100% {
+              transform: translate(0, 0) skew(0deg, 0deg);
+            }
+          }
+        `}</style>
+        <div className="text-center mt-1 text-xs text-gray-400 cursor-pointer select-none">
+          <span
+            onClick={() => {
+              setGlitch((prev) => !prev);
+            }}
           >
-            Read our docs
-          </a>
+            🐣 Impossible Mission Force
+          </span>
+          {glitch && (
+            <div className="mt-2 text-sm text-red-500 animate-ping">
+              💥 5초후 폭팔합니다.
+            </div>
+          )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
