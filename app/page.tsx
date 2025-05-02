@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -78,6 +78,7 @@ export default function Home() {
       document.body.classList.remove("glitch-mode");
     }
   }, [glitch]);
+
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState<string>(today);
   const allDatesForTarget = useMemo(() => {
@@ -92,15 +93,22 @@ export default function Home() {
     return dateArray;
   }, []);
 
-  const getTargetWeightForDate = (selectedDate: string): number => {
-    const targetData = generateDietTargetData(allDatesForTarget);
-    const targetEntry = targetData.find((entry) => entry.date === selectedDate);
-    return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
-  };
+  const getTargetWeightForDate = useCallback(
+    (selectedDate: string): number => {
+      const targetData = generateDietTargetData(allDatesForTarget);
+      const targetEntry = targetData.find(
+        (entry) => entry.date === selectedDate
+      );
+      return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
+    },
+    [allDatesForTarget]
+  );
 
   const [weight, setWeight] = useState<number>(getTargetWeightForDate(date));
-  const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
+  const [dbHistory, setDbHistory] = useState<UserEntry[]>([]);
+  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
 
   const weightDifference = useMemo(() => {
     const targetWeight = getTargetWeightForDate(date);
@@ -123,8 +131,6 @@ export default function Home() {
     }
   }, []);
 
-  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
-
   useEffect(() => {
     setUserModifiedWeight(false); // 날짜 변경 시 초기화
   }, [date]);
@@ -142,8 +148,38 @@ export default function Home() {
     setWeight(parseFloat(e.target.value));
   };
 
-  // 기록 후 상태 초기화
-  const handleSubmit = (e: React.FormEvent) => {
+  // DB에서 기록 불러오기
+  const loadWeightHistory = async () => {
+    setLoadingHistory(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/weights");
+      if (response.ok) {
+        const result: UserEntry[] = await response.json();
+        setDbHistory(result);
+      } else {
+        const message = await response.text();
+        setError(`Failed to load history: ${message}`);
+      }
+    } catch (e: unknown) {
+      // 타입 주석을 unknown으로 변경
+      let errorMessage = "Failed to load history.";
+      if (e instanceof Error) {
+        errorMessage += ` ${e.message}`;
+      }
+      setError(errorMessage);
+      console.error(e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWeightHistory(); // 컴포넌트 마운트 시 데이터 불러오기
+  }, []);
+
+  // 기록 후 상태 초기화 및 DB 저장
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date) {
       setError("날짜를 입력해주세요.");
@@ -154,8 +190,31 @@ export default function Home() {
       return;
     }
     setError(null);
-    setData((prev) => [...prev, { date, weight }]);
-    setUserModifiedWeight(false); // 제출 후 초기화
+
+    try {
+      const response = await fetch("/api/weights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ date, weight }),
+      });
+
+      if (response.ok) {
+        setUserModifiedWeight(false);
+        loadWeightHistory();
+      } else {
+        const message = await response.text();
+        setError(`Failed to save weight: ${message}`);
+      }
+    } catch (e: unknown) {
+      // 타입 주석을 unknown으로 변경
+      let errorMessage = "Failed to save weight.";
+      if (e instanceof Error) {
+        errorMessage += ` ${e.message}`;
+      }
+      setError(errorMessage);
+    }
   };
 
   const allDates = useMemo(() => {
@@ -167,9 +226,9 @@ export default function Home() {
       dateArray.push(format(currentDate, "yyyy-MM-dd"));
       currentDate = addDays(currentDate, 1);
     }
-    const userDates = data.map((d) => d.date);
+    const userDates = dbHistory.map((d) => d.date);
     return Array.from(new Set([...dateArray, ...userDates])).sort();
-  }, [data]);
+  }, [dbHistory]);
 
   const dietTargetData = useMemo(
     () => generateDietTargetData(allDates),
@@ -178,7 +237,7 @@ export default function Home() {
 
   const mergedData = useMemo(() => {
     return allDates.map((date) => {
-      const userEntry = data.find((d) => d.date === date);
+      const userEntry = dbHistory.find((d) => d.date === date);
       const targetEntry = dietTargetData.find((d) => d.date === date);
       return {
         date,
@@ -186,14 +245,16 @@ export default function Home() {
         dietTarget: targetEntry?.dietTarget ?? null,
       };
     });
-  }, [allDates, data, dietTargetData]);
+  }, [allDates, dbHistory, dietTargetData]);
 
   return (
     <div className="flex flex-col font-sans h-screen">
       <main className="flex flex-col flex-grow p-6 sm:p-12 w-full mx-auto">
         <h1 className="text-xl font-semibold text-center ">📉 체중 관리</h1>
 
-        {mergedData.length > 0 && (
+        {loadingHistory ? (
+          <p className="text-center text-gray-500">Loading weight history...</p>
+        ) : mergedData.length > 0 ? (
           <div className="flex-grow h-0 min-h-[300px]">
             {" "}
             {/* 변경된 부분 */}
@@ -237,6 +298,8 @@ export default function Home() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        ) : (
+          <p className="text-center text-gray-500">No weight data available.</p>
         )}
 
         <form
