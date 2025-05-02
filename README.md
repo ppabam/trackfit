@@ -22,3 +22,4 @@ CREATE TABLE IF NOT EXISTS weights (
 
 ### Ref
 - [download svg icon](https://www.reshot.com/free-svg-icons/chart/)
+- [favicon](https://favicon.io/)
