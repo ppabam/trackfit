@@ -69,6 +69,15 @@ const generateDietTargetData = (allDates: string[]): MergedEntry[] => {
 };
 
 export default function Home() {
+  const [glitch, setGlitch] = useState(false);
+
+  useEffect(() => {
+    if (glitch) {
+      document.body.classList.add("glitch-mode");
+    } else {
+      document.body.classList.remove("glitch-mode");
+    }
+  }, [glitch]);
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState<string>(today);
   const allDatesForTarget = useMemo(() => {
@@ -267,6 +276,48 @@ export default function Home() {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <Button type="submit">기록하기</Button>
         </form>
+
+        <style>{`
+          body.glitch-mode {
+            animation: glitch-bg 0.3s infinite alternate;
+            filter: contrast(150%) hue-rotate(45deg);
+          }
+
+          @keyframes glitch-bg {
+            0% {
+              transform: translate(0, 0) skew(0deg, 0deg);
+            }
+            20% {
+              transform: translate(-5px, 3px) skew(2deg, -2deg);
+            }
+            40% {
+              transform: translate(5px, -3px) skew(-2deg, 2deg);
+            }
+            60% {
+              transform: translate(-3px, 5px) skew(3deg, -3deg);
+            }
+            80% {
+              transform: translate(3px, -5px) skew(-3deg, 3deg);
+            }
+            100% {
+              transform: translate(0, 0) skew(0deg, 0deg);
+            }
+          }
+        `}</style>
+        <div className="text-center mt-1 text-xs text-gray-400 cursor-pointer select-none">
+          <span
+            onClick={() => {
+              setGlitch((prev) => !prev);
+            }}
+          >
+            🐣 Impossible Mission Force
+          </span>
+          {glitch && (
+            <div className="mt-2 text-sm text-red-500 animate-ping">
+              💥 5초후 폭팔합니다.
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
