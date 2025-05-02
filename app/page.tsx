@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -93,17 +93,22 @@ export default function Home() {
     return dateArray;
   }, []);
 
-  const getTargetWeightForDate = (selectedDate: string): number => {
-    const targetData = generateDietTargetData(allDatesForTarget);
-    const targetEntry = targetData.find((entry) => entry.date === selectedDate);
-    return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
-  };
+  const getTargetWeightForDate = useCallback(
+    (selectedDate: string): number => {
+      const targetData = generateDietTargetData(allDatesForTarget);
+      const targetEntry = targetData.find(
+        (entry) => entry.date === selectedDate
+      );
+      return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
+    },
+    [allDatesForTarget]
+  );
 
   const [weight, setWeight] = useState<number>(getTargetWeightForDate(date));
-  const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
   const [dbHistory, setDbHistory] = useState<UserEntry[]>([]);
+  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
 
   const weightDifference = useMemo(() => {
     const targetWeight = getTargetWeightForDate(date);
@@ -125,8 +130,6 @@ export default function Home() {
       }, 100);
     }
   }, []);
-
-  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
 
   useEffect(() => {
     setUserModifiedWeight(false); // 날짜 변경 시 초기화
@@ -158,8 +161,14 @@ export default function Home() {
         const message = await response.text();
         setError(`Failed to load history: ${message}`);
       }
-    } catch (e: any) {
-      setError(`Failed to load history: ${e.message}`);
+    } catch (e: unknown) {
+      // 타입 주석을 unknown으로 변경
+      let errorMessage = "Failed to load history.";
+      if (e instanceof Error) {
+        errorMessage += ` ${e.message}`;
+      }
+      setError(errorMessage);
+      console.error(e);
     } finally {
       setLoadingHistory(false);
     }
@@ -192,15 +201,19 @@ export default function Home() {
       });
 
       if (response.ok) {
-        setData((prev) => [...prev, { date, weight }]);
-        setUserModifiedWeight(false); // 제출 후 초기화
-        loadWeightHistory(); // 저장 후 데이터 다시 불러오기
+        setUserModifiedWeight(false);
+        loadWeightHistory();
       } else {
         const message = await response.text();
         setError(`Failed to save weight: ${message}`);
       }
-    } catch (e: any) {
-      setError(`Failed to save weight: ${e.message}`);
+    } catch (e: unknown) {
+      // 타입 주석을 unknown으로 변경
+      let errorMessage = "Failed to save weight.";
+      if (e instanceof Error) {
+        errorMessage += ` ${e.message}`;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -213,9 +226,9 @@ export default function Home() {
       dateArray.push(format(currentDate, "yyyy-MM-dd"));
       currentDate = addDays(currentDate, 1);
     }
-    const userDates = dbHistory.map((d) => d.date); // db에서 불러온 데이터 사용
+    const userDates = dbHistory.map((d) => d.date);
     return Array.from(new Set([...dateArray, ...userDates])).sort();
-  }, [dbHistory]); // dbHistory가 변경될 때마다 재생성
+  }, [dbHistory]);
 
   const dietTargetData = useMemo(
     () => generateDietTargetData(allDates),
@@ -224,7 +237,7 @@ export default function Home() {
 
   const mergedData = useMemo(() => {
     return allDates.map((date) => {
-      const userEntry = dbHistory.find((d) => d.date === date); // db에서 불러온 데이터 사용
+      const userEntry = dbHistory.find((d) => d.date === date);
       const targetEntry = dietTargetData.find((d) => d.date === date);
       return {
         date,
@@ -232,7 +245,7 @@ export default function Home() {
         dietTarget: targetEntry?.dietTarget ?? null,
       };
     });
-  }, [allDates, dbHistory, dietTargetData]); // dbHistory가 변경될 때마다 재생성
+  }, [allDates, dbHistory, dietTargetData]);
 
   return (
     <div className="flex flex-col font-sans h-screen">
