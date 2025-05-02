@@ -316,7 +316,7 @@ export default function Home() {
               onChange={(e) => {
                 setDate(e.target.value);
               }}
-              className="border border-gray-300 p-2 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 p-2 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 w-full"
             />
           </label>
           <label className="flex flex-col gap-2">
