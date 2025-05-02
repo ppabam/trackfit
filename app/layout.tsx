@@ -18,8 +18,7 @@ export const metadata: Metadata = {
     "Track-Fit 앱으로 체중 변화를 추적하고, 목표를 설정하고, 건강한 라이프스타일을 유지하세요.",
   openGraph: {
     title: "Track-Fit",
-    description:
-      "Track-Fit 앱으로 체중 변화를 추적하고, 목표를 설정하고, 건강한 라이프스타일을 유지하세요.",
+    description: "이번엔 진짜 빠질게요!",
     images: ["https://fit.diginori.com/og.png"],
   },
 };
