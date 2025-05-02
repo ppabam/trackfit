@@ -111,15 +111,6 @@ export default function Home() {
   }, [weight, date, getTargetWeightForDate]);
 
   useEffect(() => {
-    // 모바일 환경에서 주소창 숨기기
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setTimeout(() => {
-        window.scrollTo(0, 1);
-      }, 100);
-    }
-  }, []);
-
-  useEffect(() => {
     setUserModifiedWeight(false); // 날짜 변경 시 초기화
   }, [date]);
 
