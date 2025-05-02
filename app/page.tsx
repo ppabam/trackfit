@@ -23,18 +23,6 @@ type MergedEntry = {
   dietTarget: number | null;
 };
 
-const Button = ({
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button
-    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-    {...props}
-  >
-    {children}
-  </button>
-);
-
 // 목표선 설정
 const TARGET_CONFIG = {
   dietStartDate: "2025-04-21",
@@ -337,7 +325,12 @@ export default function Home() {
             />
           </label>
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <Button type="submit">기록하기</Button>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          >
+            기록하기
+          </button>
         </form>
 
         <style>{`
