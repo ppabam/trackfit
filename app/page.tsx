@@ -93,6 +93,17 @@ export default function Home() {
   const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const weightDifference = useMemo(() => {
+    const diff = parseFloat((weight - todayTarget).toFixed(1));
+    if (diff > 0) {
+      return `(+ ${diff} kg)`;
+    } else if (diff < 0) {
+      return `(- ${Math.abs(diff)} kg)`;
+    } else {
+      return "(0 kg)";
+    }
+  }, [weight, todayTarget]);
+
   useEffect(() => {
     // 모바일 환경에서 주소창 숨기기
     if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -215,7 +226,9 @@ export default function Home() {
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-gray-700">
               몸무게:{" "}
-              <strong className="text-blue-600">{weight.toFixed(1)} kg</strong>
+              <strong className="text-blue-600">
+                {weight.toFixed(1)} kg {weightDifference}
+              </strong>
             </span>
             <input
               type="range"
