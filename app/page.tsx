@@ -116,6 +116,10 @@ export default function Home() {
 
   const [userModifiedWeight, setUserModifiedWeight] = useState(false);
 
+  useEffect(() => {
+    setUserModifiedWeight(false); // 날짜 변경 시 초기화
+  }, [date]);
+
   // 날짜가 바뀌면 목표 체중으로 초기화 (단, 수동 조작 안 했을 때만)
   useEffect(() => {
     if (!userModifiedWeight) {
