@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -76,6 +76,15 @@ export default function Home() {
   const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    // 모바일 환경에서 주소창 숨기기
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setTimeout(() => {
+        window.scrollTo(0, 1);
+      }, 100);
+    }
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!date) {
@@ -123,7 +132,7 @@ export default function Home() {
   return (
     <div className="flex flex-col font-sans h-screen">
       <main className="flex flex-col flex-grow p-6 sm:p-12 w-full mx-auto">
-        <h1 className="text-xl font-semibold text-center">📉 체중 관리</h1>
+        <h1 className="text-xl font-semibold text-center ">📉 체중 관리</h1>
 
         {mergedData.length > 0 && (
           <div className="flex-grow h-0 min-h-[300px]">
@@ -132,7 +141,7 @@ export default function Home() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={mergedData}
-                margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
+                margin={{ top: 20, right: 0, left: -25, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
