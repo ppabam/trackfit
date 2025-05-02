@@ -78,6 +78,7 @@ export default function Home() {
       document.body.classList.remove("glitch-mode");
     }
   }, [glitch]);
+
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState<string>(today);
   const allDatesForTarget = useMemo(() => {
@@ -142,8 +143,8 @@ export default function Home() {
     setWeight(parseFloat(e.target.value));
   };
 
-  // 기록 후 상태 초기화
-  const handleSubmit = (e: React.FormEvent) => {
+  // 기록 후 상태 초기화 및 DB 저장
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date) {
       setError("날짜를 입력해주세요.");
@@ -154,8 +155,28 @@ export default function Home() {
       return;
     }
     setError(null);
-    setData((prev) => [...prev, { date, weight }]);
-    setUserModifiedWeight(false); // 제출 후 초기화
+
+    try {
+      const response = await fetch("/api/weights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ date, weight }),
+      });
+
+      if (response.ok) {
+        setData((prev) => [...prev, { date, weight }]);
+        setUserModifiedWeight(false); // 제출 후 초기화
+        // Optionally reload data from DB
+        // loadWeightHistoryClient();
+      } else {
+        const message = await response.text();
+        setError(`Failed to save weight: ${message}`);
+      }
+    } catch (e: any) {
+      setError(`Failed to save weight: ${e.message}`);
+    }
   };
 
   const allDates = useMemo(() => {
