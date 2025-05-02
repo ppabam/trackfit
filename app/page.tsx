@@ -83,18 +83,19 @@ export default function Home() {
     return dateArray;
   }, []);
 
-  const todayTarget = useMemo(() => {
+  const getTargetWeightForDate = (selectedDate: string): number => {
     const targetData = generateDietTargetData(allDatesForTarget);
-    const todayTargetEntry = targetData.find((entry) => entry.date === today);
-    return todayTargetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
-  }, [allDatesForTarget, today]);
+    const targetEntry = targetData.find((entry) => entry.date === selectedDate);
+    return targetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
+  };
 
-  const [weight, setWeight] = useState<number>(todayTarget);
+  const [weight, setWeight] = useState<number>(getTargetWeightForDate(date));
   const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const weightDifference = useMemo(() => {
-    const diff = parseFloat((weight - todayTarget).toFixed(1));
+    const targetWeight = getTargetWeightForDate(date);
+    const diff = parseFloat((weight - targetWeight).toFixed(1));
     if (diff > 0) {
       return `(+ ${diff} kg)`;
     } else if (diff < 0) {
@@ -102,7 +103,7 @@ export default function Home() {
     } else {
       return "(0 kg)";
     }
-  }, [weight, todayTarget]);
+  }, [weight, date, getTargetWeightForDate]);
 
   useEffect(() => {
     // 모바일 환경에서 주소창 숨기기
@@ -112,6 +113,11 @@ export default function Home() {
       }, 100);
     }
   }, []);
+
+  // 날짜가 변경될 때 목표 체중으로 몸무게 자동 조정
+  useEffect(() => {
+    setWeight(getTargetWeightForDate(date));
+  }, [date, getTargetWeightForDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,7 +225,9 @@ export default function Home() {
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                setDate(e.target.value);
+              }}
               className="border border-gray-300 p-2 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </label>
