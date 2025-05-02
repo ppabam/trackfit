@@ -123,12 +123,14 @@ export default function Home() {
   }, [allDates, data, dietTargetData]);
 
   return (
-    <div className="flex flex-col min-h-screen font-sans">
-      <main className="flex flex-col gap-8 p-6 sm:p-12 max-w-xl w-full mx-auto">
+    <div className="flex flex-col font-sans h-screen">
+      <main className="flex flex-col flex-grow p-6 sm:p-12 w-full mx-auto">
         <h1 className="text-xl font-semibold text-center">📉 체중 관리</h1>
 
         {mergedData.length > 0 && (
-          <div className="h-64">
+          <div className="flex-grow h-0 min-h-[300px]">
+            {" "}
+            {/* 변경된 부분 */}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={mergedData}
@@ -171,7 +173,12 @@ export default function Home() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-6 mt-4 pb-4 h-auto"
+        >
+          {" "}
+          {/* 변경된 부분 */}
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-gray-700">날짜</span>
             <input
@@ -181,7 +188,6 @@ export default function Home() {
               className="border border-gray-300 p-2 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </label>
-
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-gray-700">
               몸무게:{" "}
@@ -197,23 +203,10 @@ export default function Home() {
               className="w-full accent-blue-500"
             />
           </label>
-
           {error && <p className="text-red-500 text-sm">{error}</p>}
-
           <Button type="submit">기록하기</Button>
         </form>
       </main>
-
-      <footer className="w-full p-6 bg-gray-50 border-t flex flex-wrap items-center justify-center gap-6 text-sm text-gray-700">
-        <Link href="/space" className="flex items-center gap-2 hover:underline">
-          <Image src="/space.svg" alt="Space" width={24} height={24} />
-          Space
-        </Link>
-        <Link href="/chart" className="flex items-center gap-2 hover:underline">
-          <Image src="/chart3.svg" alt="Chart" width={24} height={24} />
-          Chart →
-        </Link>
-      </footer>
     </div>
   );
 }
