@@ -11,8 +11,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { addDays, format, parseISO, differenceInDays } from "date-fns";
-import Image from "next/image";
-import Link from "next/link";
 
 type UserEntry = {
   date: string;
