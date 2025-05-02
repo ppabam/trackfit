@@ -153,19 +153,25 @@ export default function Home() {
                             <LineChart data={mergedData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(date) => format(parseISO(date), 'MM-dd')}
+                                  dataKey="date"
+                                  tickFormatter={(date) => format(parseISO(date), 'MM-dd')}
+                                  tick={{ fontSize: 12 }}
+                                  angle={-45}
                                 />
-                                <YAxis unit="kg" domain={['auto', 'auto']} />
+                                <YAxis 
+                                  unit="kg" 
+                                  domain={['auto', 'auto']}
+                                  tick={{ fontSize: 12 }} 
+                                />
                                 <Tooltip />
                                 <Line
                                     type="monotone"
                                     dataKey="dietTarget"
                                     stroke="#e45858"
                                     strokeDasharray="3 3"
-                                    strokeWidth={2}
+                                    strokeWidth={1}
                                     dot={false}
-                                    name="목표선 (98 → 80)"
+                                    name="목표선"
                                     connectNulls={false} // 이 부분을 false로 유지
                                 />
                                 <Line
@@ -174,7 +180,7 @@ export default function Home() {
                                     stroke="#3b82f6"
                                     strokeWidth={2}
                                     dot
-                                    name="내 기록"
+                                    name="달성"
                                     connectNulls
                                 />
                             </LineChart>
