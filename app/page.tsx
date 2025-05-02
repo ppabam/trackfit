@@ -69,10 +69,27 @@ const generateDietTargetData = (allDates: string[]): MergedEntry[] => {
 };
 
 export default function Home() {
-  const [date, setDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
-  );
-  const [weight, setWeight] = useState<number>(90);
+  const today = new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState<string>(today);
+  const allDatesForTarget = useMemo(() => {
+    const startDate = parseISO(TARGET_CONFIG.dietStartDate);
+    const endDate = parseISO(TARGET_CONFIG.dietEndDate);
+    const dateArray: string[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+      dateArray.push(format(currentDate, "yyyy-MM-dd"));
+      currentDate = addDays(currentDate, 1);
+    }
+    return dateArray;
+  }, []);
+
+  const todayTarget = useMemo(() => {
+    const targetData = generateDietTargetData(allDatesForTarget);
+    const todayTargetEntry = targetData.find((entry) => entry.date === today);
+    return todayTargetEntry?.dietTarget ?? TARGET_CONFIG.dietStartWeight;
+  }, [allDatesForTarget, today]);
+
+  const [weight, setWeight] = useState<number>(todayTarget);
   const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
