@@ -114,11 +114,22 @@ export default function Home() {
     }
   }, []);
 
-  // 날짜가 변경될 때 목표 체중으로 몸무게 자동 조정
-  useEffect(() => {
-    setWeight(getTargetWeightForDate(date));
-  }, [date, getTargetWeightForDate]);
+  const [userModifiedWeight, setUserModifiedWeight] = useState(false);
 
+  // 날짜가 바뀌면 목표 체중으로 초기화 (단, 수동 조작 안 했을 때만)
+  useEffect(() => {
+    if (!userModifiedWeight) {
+      setWeight(getTargetWeightForDate(date));
+    }
+  }, [date, userModifiedWeight, getTargetWeightForDate]);
+
+  // 슬라이더 수동 조작 감지
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserModifiedWeight(true);
+    setWeight(parseFloat(e.target.value));
+  };
+
+  // 기록 후 상태 초기화
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!date) {
@@ -131,6 +142,7 @@ export default function Home() {
     }
     setError(null);
     setData((prev) => [...prev, { date, weight }]);
+    setUserModifiedWeight(false); // 제출 후 초기화
   };
 
   const allDates = useMemo(() => {
@@ -244,7 +256,7 @@ export default function Home() {
               max="100"
               step="0.1"
               value={weight}
-              onChange={(e) => setWeight(parseFloat(e.target.value))}
+              onChange={handleWeightChange}
               className="w-full accent-blue-500"
             />
           </label>
