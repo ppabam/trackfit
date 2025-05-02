@@ -1,7 +1,7 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# track fit
+- https://fit.diginori.com
 
 ## Getting Started
-
 First, run the development server:
 
 ```bash
@@ -16,4 +16,9 @@ CREATE TABLE IF NOT EXISTS weights (
     weight DECIMAL(5, 2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-```
+
+## Dev
+- https://fit-dev.vercel.app
+
+### Ref
+- [download svg icon](https://www.reshot.com/free-svg-icons/chart/)
