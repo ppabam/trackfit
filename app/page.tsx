@@ -114,9 +114,50 @@ export default function Home() {
     return (
         <div className="flex flex-col min-h-screen font-sans">
             <main className="flex flex-col gap-8 p-6 sm:p-12 flex-grow max-w-xl w-full mx-auto">
-                <h1 className="text-3xl font-semibold text-center">📉 체중 관리</h1>
+                <h1 className="text-xl font-semibold text-center">📉 체중 관리</h1>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                {mergedData.length > 0 && (
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={mergedData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                  dataKey="date"
+                                  tickFormatter={(date) => format(parseISO(date), 'M-dd')}
+                                  tick={{ fontSize: 9 }}
+                                  angle={-45}
+                                />
+                                <YAxis 
+                                  unit="kg" 
+                                  domain={['auto', 'auto']}
+                                  tick={{ fontSize: 9 }}                                  
+                                />
+                                <Tooltip />
+                                <Line
+                                    type="monotone"
+                                    dataKey="dietTarget"
+                                    stroke="#e45858"
+                                    strokeDasharray="3 3"
+                                    strokeWidth={1}
+                                    dot={false}
+                                    name="목표선"
+                                    connectNulls={false} // 이 부분을 false로 유지
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="weight"
+                                    stroke="#3b82f6"
+                                    strokeWidth={2}
+                                    dot
+                                    name="달성"
+                                    connectNulls
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+
+<form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <label className="flex flex-col gap-1">
                         <span className="text-sm font-medium text-gray-700">날짜</span>
                         <input
@@ -146,47 +187,6 @@ export default function Home() {
 
                     <Button type="submit">기록하기</Button>
                 </form>
-
-                {mergedData.length > 0 && (
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={mergedData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                  dataKey="date"
-                                  tickFormatter={(date) => format(parseISO(date), 'MM-dd')}
-                                  tick={{ fontSize: 12 }}
-                                  angle={-45}
-                                />
-                                <YAxis 
-                                  unit="kg" 
-                                  domain={['auto', 'auto']}
-                                  tick={{ fontSize: 12 }} 
-                                />
-                                <Tooltip />
-                                <Line
-                                    type="monotone"
-                                    dataKey="dietTarget"
-                                    stroke="#e45858"
-                                    strokeDasharray="3 3"
-                                    strokeWidth={1}
-                                    dot={false}
-                                    name="목표선"
-                                    connectNulls={false} // 이 부분을 false로 유지
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="weight"
-                                    stroke="#3b82f6"
-                                    strokeWidth={2}
-                                    dot
-                                    name="달성"
-                                    connectNulls
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                )}
             </main>
 
             <footer className="w-full p-6 bg-gray-50 border-t flex flex-wrap items-center justify-center gap-6 text-sm text-gray-700">
