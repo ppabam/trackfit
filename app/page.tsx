@@ -102,6 +102,8 @@ export default function Home() {
   const [weight, setWeight] = useState<number>(getTargetWeightForDate(date));
   const [data, setData] = useState<UserEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
+  const [dbHistory, setDbHistory] = useState<UserEntry[]>([]);
 
   const weightDifference = useMemo(() => {
     const targetWeight = getTargetWeightForDate(date);
@@ -143,6 +145,30 @@ export default function Home() {
     setWeight(parseFloat(e.target.value));
   };
 
+  // DB에서 기록 불러오기
+  const loadWeightHistory = async () => {
+    setLoadingHistory(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/weights");
+      if (response.ok) {
+        const result: UserEntry[] = await response.json();
+        setDbHistory(result);
+      } else {
+        const message = await response.text();
+        setError(`Failed to load history: ${message}`);
+      }
+    } catch (e: any) {
+      setError(`Failed to load history: ${e.message}`);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWeightHistory(); // 컴포넌트 마운트 시 데이터 불러오기
+  }, []);
+
   // 기록 후 상태 초기화 및 DB 저장
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,8 +194,7 @@ export default function Home() {
       if (response.ok) {
         setData((prev) => [...prev, { date, weight }]);
         setUserModifiedWeight(false); // 제출 후 초기화
-        // Optionally reload data from DB
-        // loadWeightHistoryClient();
+        loadWeightHistory(); // 저장 후 데이터 다시 불러오기
       } else {
         const message = await response.text();
         setError(`Failed to save weight: ${message}`);
@@ -188,9 +213,9 @@ export default function Home() {
       dateArray.push(format(currentDate, "yyyy-MM-dd"));
       currentDate = addDays(currentDate, 1);
     }
-    const userDates = data.map((d) => d.date);
+    const userDates = dbHistory.map((d) => d.date); // db에서 불러온 데이터 사용
     return Array.from(new Set([...dateArray, ...userDates])).sort();
-  }, [data]);
+  }, [dbHistory]); // dbHistory가 변경될 때마다 재생성
 
   const dietTargetData = useMemo(
     () => generateDietTargetData(allDates),
@@ -199,7 +224,7 @@ export default function Home() {
 
   const mergedData = useMemo(() => {
     return allDates.map((date) => {
-      const userEntry = data.find((d) => d.date === date);
+      const userEntry = dbHistory.find((d) => d.date === date); // db에서 불러온 데이터 사용
       const targetEntry = dietTargetData.find((d) => d.date === date);
       return {
         date,
@@ -207,14 +232,16 @@ export default function Home() {
         dietTarget: targetEntry?.dietTarget ?? null,
       };
     });
-  }, [allDates, data, dietTargetData]);
+  }, [allDates, dbHistory, dietTargetData]); // dbHistory가 변경될 때마다 재생성
 
   return (
     <div className="flex flex-col font-sans h-screen">
       <main className="flex flex-col flex-grow p-6 sm:p-12 w-full mx-auto">
         <h1 className="text-xl font-semibold text-center ">📉 체중 관리</h1>
 
-        {mergedData.length > 0 && (
+        {loadingHistory ? (
+          <p className="text-center text-gray-500">Loading weight history...</p>
+        ) : mergedData.length > 0 ? (
           <div className="flex-grow h-0 min-h-[300px]">
             {" "}
             {/* 변경된 부분 */}
@@ -258,6 +285,8 @@ export default function Home() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        ) : (
+          <p className="text-center text-gray-500">No weight data available.</p>
         )}
 
         <form
