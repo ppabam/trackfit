@@ -124,7 +124,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans">
-      <main className="flex flex-col gap-8 p-6 sm:p-12 flex-grow max-w-xl w-full mx-auto">
+      <main className="flex flex-col gap-8 p-6 sm:p-12 max-w-xl w-full mx-auto">
         <h1 className="text-xl font-semibold text-center">📉 체중 관리</h1>
 
         {mergedData.length > 0 && (
