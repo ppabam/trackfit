@@ -67,7 +67,8 @@ export default function Home() {
     }
   }, [glitch]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = format(new Date(), "yyyy-MM-dd");
   const [date, setDate] = useState<string>(today);
   const allDatesForTarget = useMemo(() => {
     const startDate = parseISO(TARGET_CONFIG.dietStartDate);
