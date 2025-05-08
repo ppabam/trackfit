@@ -1,6 +1,8 @@
 # track fit
 - https://fit.diginori.com
 
+![Image](https://github.com/user-attachments/assets/2da6e1db-9479-48e8-aaef-edaafb738d61)
+
 ## Getting Started
 First, run the development server:
 
