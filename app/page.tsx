@@ -23,18 +23,6 @@ type MergedEntry = {
   dietTarget: number | null;
 };
 
-const Button = ({
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button
-    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-    {...props}
-  >
-    {children}
-  </button>
-);
-
 // 목표선 설정
 const TARGET_CONFIG = {
   dietStartDate: "2025-04-21",
@@ -79,7 +67,8 @@ export default function Home() {
     }
   }, [glitch]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // const today = new Date().toISOString().slice(0, 10);
+  const today = format(new Date(), "yyyy-MM-dd");
   const [date, setDate] = useState<string>(today);
   const allDatesForTarget = useMemo(() => {
     const startDate = parseISO(TARGET_CONFIG.dietStartDate);
@@ -121,15 +110,6 @@ export default function Home() {
       return "(0 kg)";
     }
   }, [weight, date, getTargetWeightForDate]);
-
-  useEffect(() => {
-    // 모바일 환경에서 주소창 숨기기
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setTimeout(() => {
-        window.scrollTo(0, 1);
-      }, 100);
-    }
-  }, []);
 
   useEffect(() => {
     setUserModifiedWeight(false); // 날짜 변경 시 초기화
@@ -337,7 +317,12 @@ export default function Home() {
             />
           </label>
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <Button type="submit">기록하기</Button>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+          >
+            기록하기
+          </button>
         </form>
 
         <style>{`
